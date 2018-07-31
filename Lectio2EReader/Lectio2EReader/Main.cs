@@ -1,4 +1,6 @@
 using System;
+using System.Threading.Tasks;
+
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
 
@@ -9,7 +11,7 @@ namespace Lectio2EReader
     public static class Main
     {
         [FunctionName("SendToEReader")]
-        public static void Run([TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, TraceWriter log, ExecutionContext context)
+        public static async Task Run([TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, TraceWriter log, ExecutionContext context)
         {
             log.Info($"C# Timer trigger function executed at: {DateTime.Now}");
 
@@ -19,16 +21,20 @@ namespace Lectio2EReader
                 .AddEnvironmentVariables()
                 .Build();
 
-            var cstr = config.GetConnectionString("SqlConnectionString");
 
-            var setting1 = config["Setting1"];
+            log.Info("Sending email...");
 
-            log.Info(cstr);
-            log.Info(setting1);
+            var sender = new EmailSender(config);
+            try
+            {
+                await sender.Send("tomek.romanowski@gmail.com", "tomekr.kindle@or.pl", "TEST 1", "");
 
-
-            var sender = new KindleSender();
-            sender.Send();
+            }
+            catch (Exception ex)
+            {
+                log.Info(ex.Message);
+            }
+            
             log.Info($"C# Sent at: {DateTime.Now}");
         }
     }
