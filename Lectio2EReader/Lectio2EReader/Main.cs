@@ -22,21 +22,27 @@ namespace Lectio2EReader
                 .AddEnvironmentVariables()
                 .Build();
 
-
-            log.Info("Sending email...");
-
-            var sender = new EmailSender(config);
             try
             {
-                await sender.Send("tomek.romanowski@gmail.com", "tomekr.kindle@or.pl", "TEST 1", "Sent at "+DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                log.Verbose("Getting list of links ...");
+                var infoProvider = new LectioInfoProvider(config);
+                var fileLinks = infoProvider.GetLectioLinks(new LectioInfoProvider.LectioFiles[] { LectioInfoProvider.LectioFiles.RozwazaniaKrotkie, LectioInfoProvider.LectioFiles.LectioMobi });
 
+                log.Verbose("Preparing to send to ereader");
+                var sender = new KindleSender(config);
+
+                foreach (var l in fileLinks)
+                {
+                    log.Verbose("Now sending for a link: " + l);
+                    sender.SendFileFromLink(l);
+                }
             }
             catch (Exception ex)
             {
                 log.Info(ex.Message);
             }
-            
-            log.Info($"C# Sent at: {DateTime.Now}");
+
+            log.Info($"C# Finished at: {DateTime.Now}");
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Lectio2EReader
             client = new SendGridClient(sgKey);
         }
 
-        public async Task Send(string to, string from, string subject, string plainContent)
+        public async Task SendText(string from, string to, string subject, string textContent, IDictionary<string, string> attachments = null)
         {
             if (String.IsNullOrEmpty(to))
                 throw new ArgumentNullException("to");
@@ -30,19 +30,20 @@ namespace Lectio2EReader
                 throw new ArgumentNullException("from");
 
 
-            if (String.IsNullOrEmpty(plainContent))
-                plainContent = "";
+            if (String.IsNullOrEmpty(textContent))
+                textContent = ".";
 
             var msg = new SendGridMessage()
             {
                 From = new EmailAddress(from),
                 Subject = subject,
-                PlainTextContent = plainContent,
+                PlainTextContent = textContent,
             };
             msg.AddTo(new EmailAddress(to));
 
-            //var filename = "test.docx";
-            //msg.AddAttachment("tr" + filename, System.Convert.ToBase64String(System.IO.File.ReadAllBytes(@".\" + filename)));
+            if (attachments != null)
+                foreach (var k in attachments.Keys)
+                    msg.AddAttachment(k, attachments[k]);
 
             var response = await client.SendEmailAsync(msg);
             if (response.StatusCode != System.Net.HttpStatusCode.Accepted)
