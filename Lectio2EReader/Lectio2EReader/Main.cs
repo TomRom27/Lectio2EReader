@@ -26,7 +26,7 @@ namespace Lectio2EReader
             {
                 log.Verbose("Getting list of links ...");
                 var infoProvider = new LectioInfoProvider(config);
-                var fileLinks = infoProvider.GetLectioLinks(new LectioInfoProvider.LectioFiles[] { LectioInfoProvider.LectioFiles.RozwazaniaKrotkie, LectioInfoProvider.LectioFiles.LectioMobi });
+                var fileLinks = await infoProvider.GetLectioLinks(new LectioInfoProvider.LectioFiles[] { LectioInfoProvider.LectioFiles.RozwazaniaKrotkie, LectioInfoProvider.LectioFiles.LectioMobi });
 
                 log.Verbose("Preparing to send to ereader");
                 var sender = new KindleSender(config);
@@ -34,7 +34,7 @@ namespace Lectio2EReader
                 foreach (var l in fileLinks)
                 {
                     log.Verbose("Now sending for a link: " + l);
-                    sender.SendFileFromLink(l);
+                    await sender.SendFileFromLinkAsync(l);
                 }
             }
             catch (Exception ex)

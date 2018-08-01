@@ -17,7 +17,7 @@ namespace Lectio2EReader
         {
             var sgKey = config.GetConnectionString("SGApiKey");
             if (String.IsNullOrEmpty(sgKey))
-                throw new ArgumentNullException("SGApiKey");
+                throw new ArgumentNullException("SGApiKey in Settings");
 
             client = new SendGridClient(sgKey);
         }
