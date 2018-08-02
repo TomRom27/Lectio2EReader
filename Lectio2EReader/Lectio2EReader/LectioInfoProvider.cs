@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.Configuration;
+
+using AngleSharp.Dom.Html;
+using AngleSharp.Parser.Html;
 
 namespace Lectio2EReader
 {
@@ -19,15 +24,6 @@ namespace Lectio2EReader
             if (String.IsNullOrEmpty(lectioUrl))
                 throw new ArgumentNullException("LectioPageUrl in Settings");
         }
-
-        /*
-	<div class="textwidget"><p><a name="rozwazania_krotkie" 
-href="http://www.onjest.pl/slowo/wp-content/uploads/2018/07/rk180729_br.pdf">Rozważania krótkie</a><br />
-<a href="http://www.onjest.pl/slowo/wp-content/uploads/2018/07/ld180729.pdf">Rozważania</a><br />
-<a href="http://www.onjest.pl/slowo/wp-content/uploads/2018/07/ld180729_br.pdf">Rozważania &#8211; broszura</a></p>
-<center><a  style="display:true" name = "mobi" href="http://www.onjest.pl/slowo/wp-content/uploads/2018/02/ebook180211.mobi"  target="_blank">          
-          
-         */
 
         private HttpClient httpClient = null;
         private HttpClient HttpClient
@@ -46,22 +42,25 @@ href="http://www.onjest.pl/slowo/wp-content/uploads/2018/07/rk180729_br.pdf">Roz
 
             var lectioHtml = await HttpClient.GetStringAsync(lectioUrl);
 
-            // todo
+
             return await Task.Run(() =>
             {
-                // get web page, analyse and extract the links
-                string current = "http://www.onjest.pl/slowo/wp-content/uploads/2018/07" + "/";
+                // get web page and extract the links
+ 
+                var parser = new HtmlParser();
+                var lectioDocument = parser.Parse(lectioHtml);
+
                 for (int i = 0; i <= files.Count - 1; i++)
                     switch (files[i])
                     {
                         case LectioFiles.RozwazaniaKrotkie:
                             {
-                                links[i] = current + "rk180729_br.pdf";
+                                links[i] = GetRozwazaniaKrotkieUrl(lectioDocument);
                                 break;
                             }
                         case LectioFiles.LectioMobi:
                             {
-                                links[i] = current + "ebook180729.mobi";
+                                links[i] = GetMobiUrl(lectioDocument);
                                 break;
                             }
                         default: throw new Exception(files[i].ToString() + " not supported");
@@ -69,6 +68,39 @@ href="http://www.onjest.pl/slowo/wp-content/uploads/2018/07/rk180729_br.pdf">Roz
 
                 return links;
             });
+        }
+
+
+        private string GetRozwazaniaKrotkieUrl(IHtmlDocument document)
+        {
+            var rkList = document.All.
+                            Where(m => m.LocalName == "a" && m.GetAttribute("name") == "rozwazania_krotkie").
+                            ToList();
+            if (rkList.Count > 0)
+                return rkList[0].GetAttribute("href");
+            else
+                return "";
+        }
+
+
+        private string GetMobiUrl(IHtmlDocument document)
+        {
+            // mobi url is created dynamically i.e. via javascript
+            // but the file itself is updated at the same moment, as Lectio file is
+            // therefore we look for Lectio url and then process it to get mobi url
+            
+            var rkList = document.All.
+                            Where(m => m.LocalName == "a" && m.GetAttribute("name") == "lectio_divina").
+                            ToList();
+            if (rkList.Count > 0)
+            {
+                var foundRef = rkList[0].GetAttribute("href");
+                // ld180729.pdf -> ebook180729.mobi
+                if (!String.IsNullOrEmpty(foundRef))
+                    return foundRef.Replace("ld", "ebook").Replace("pdf", "mobi");
+            }
+
+            return "";
         }
 
         private HttpClient CreateHttpClient()

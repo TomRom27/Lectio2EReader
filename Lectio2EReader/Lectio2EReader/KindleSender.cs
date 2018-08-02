@@ -23,13 +23,40 @@ namespace Lectio2EReader
 
         public async Task SendFileFromLinkAsync(string link)
         {
+            var contentBase64 = await GetFileAsBase64(link);
+            var filename = ExtractFilename(link);
             // todo
 
-            /*
-                System.Collections.Generic.Dictionary<string, string> att = new System.Collections.Generic.Dictionary<string, string>();
-                att.Add("zał.docx", System.Convert.ToBase64String(System.IO.File.ReadAllBytes(@".\test.docx")));
-             */
-            await emailSender.SendText("tomekr.kindle@or.pl", "tomek.romanowski@gmail.com", "TEST 1",link + "Sent at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+
+            System.Collections.Generic.Dictionary<string, string> att = new System.Collections.Generic.Dictionary<string, string>();
+            att.Add(filename, contentBase64);
+
+            await emailSender.SendText("tomekr.kindle@or.pl", "tomek.romanowski@gmail.com", "TEST 1", link + "  Sent at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), att);
         }
+
+        private System.Net.Http.HttpClient httpClient = null;
+        private System.Net.Http.HttpClient HTTPClient
+        {
+            get
+            {
+                if (httpClient == null)
+                    httpClient = new System.Net.Http.HttpClient();
+                return httpClient;
+            }
+        }
+
+        private async Task<string> GetFileAsBase64(string url)
+        {
+            var bytes = await HTTPClient.GetByteArrayAsync(url);
+            return System.Convert.ToBase64String(bytes);
+        }
+
+        private string ExtractFilename(string link)
+        {
+            var uri = new Uri(link);
+
+            return System.IO.Path.GetFileName(uri.LocalPath);
+        }
+
     }
 }
