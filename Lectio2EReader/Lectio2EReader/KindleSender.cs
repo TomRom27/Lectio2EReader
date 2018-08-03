@@ -9,29 +9,57 @@ namespace Lectio2EReader
     class KindleSender
     {
         private EmailSender emailSender;
+        private IConfigurationRoot config;
+
+        private string kindleConvertRequiredText;
+        private string kindleConvertRequiredFormats;
+        private string emailFrom;
+        private string kindleEmailTo;
 
         public KindleSender(IConfigurationRoot config)
         {
-            // todo settings  check
-            /*
-            var cstr = config.GetConnectionString("SqlConnectionString");
+            kindleConvertRequiredText = config["KindleConvertRequiredText"];
+            if (String.IsNullOrEmpty(kindleConvertRequiredText))
+                throw new ArgumentNullException("KindleConvertRequiredText in Settings");
 
-            var setting1 = config["Setting1"];
-            */
+            kindleConvertRequiredFormats = config["KindleConvertRequiredFormats"];
+            if (String.IsNullOrEmpty(kindleConvertRequiredFormats))
+                throw new ArgumentNullException("KindleConvertRequiredFormats in Settings");
+
+            emailFrom = config["EmailFrom"];
+            if (String.IsNullOrEmpty(emailFrom))
+                throw new ArgumentNullException("EmailFrom in Settings");
+
+            kindleEmailTo = config["KindleEmailTo"];
+            if (String.IsNullOrEmpty(kindleEmailTo))
+                throw new ArgumentNullException("KindleEmailTo in Settings");
+
+            // KindleEmailTo
             emailSender = new EmailSender(config);
+            this.config = config;
         }
 
         public async Task SendFileFromLinkAsync(string link)
         {
             var contentBase64 = await GetFileAsBase64(link);
             var filename = ExtractFilename(link);
-            // todo
 
+
+            var subject = "no-subject";
+            if (RequiresConversion(filename))
+                subject = kindleConvertRequiredText;
 
             System.Collections.Generic.Dictionary<string, string> att = new System.Collections.Generic.Dictionary<string, string>();
             att.Add(filename, contentBase64);
 
-            await emailSender.SendText("tomekr.kindle@or.pl", "tomek.romanowski@gmail.com", "TEST 1", link + "  Sent at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), att);
+            await emailSender.SendText(emailFrom, kindleEmailTo, subject, "", att);
+        }
+
+        private bool RequiresConversion(string filename)
+        {
+            var fileExt = System.IO.Path.GetExtension(filename);
+
+            return (kindleConvertRequiredFormats.Contains(fileExt));
         }
 
         private System.Net.Http.HttpClient httpClient = null;

@@ -22,6 +22,17 @@ namespace Lectio2EReader
                 .AddEnvironmentVariables()
                 .Build();
 
+            string sentLinks = "";
+            bool errorWhenMailing = false;
+            EmailSender mailSender = null;
+            try
+            {
+                mailSender = new EmailSender(config);
+            }
+            catch
+            {
+                errorWhenMailing = true;
+            }
             try
             {
                 log.Verbose("Getting list of links ...");
@@ -29,17 +40,33 @@ namespace Lectio2EReader
                 var fileLinks = await infoProvider.GetLectioLinks(new LectioInfoProvider.LectioFiles[] { LectioInfoProvider.LectioFiles.RozwazaniaKrotkie, LectioInfoProvider.LectioFiles.LectioMobi });
 
                 log.Verbose("Preparing to send to ereader");
-                var sender = new KindleSender(config);
+                var fileSender = new KindleSender(config);
+
+
 
                 foreach (var l in fileLinks)
                 {
                     log.Verbose("Now sending for a link: " + l);
-                    await sender.SendFileFromLinkAsync(l);
+                    await fileSender.SendFileFromLinkAsync(l);
+                    sentLinks += l + "\r\n";
+                }
+
+
+                try
+                {
+                    if (!errorWhenMailing)
+                        await mailSender.SendText(config["KindleEmailTo"], config["NotifyEmailTo"], "Sent to Kindle", sentLinks);
+                }
+                catch
+                {
+                    errorWhenMailing = true;
                 }
             }
             catch (Exception ex)
             {
                 log.Info(ex.Message);
+                if (!errorWhenMailing)
+                    await mailSender.SendText(config["KindleEmailTo"], config["NotifyEmailTo"], "NOT Sent to Kindle", sentLinks + "\r\n" + ex.Message);
             }
 
             log.Info($"C# Finished at: {DateTime.Now}");
