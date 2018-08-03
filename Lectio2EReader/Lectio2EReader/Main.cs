@@ -48,7 +48,7 @@ namespace Lectio2EReader
                 {
                     log.Verbose("Now sending for a link: " + l);
                     await fileSender.SendFileFromLinkAsync(l);
-                    sentLinks += l + "\r\n";
+                    sentLinks += l + Environment.NewLine;
                 }
 
 
