@@ -12,7 +12,9 @@ namespace Lectio2EReader
     {
         [FunctionName("SendToEReader")]
         [Disable("IsFuncDisabled")]
-        public static async Task Run([TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, TraceWriter log, ExecutionContext context)
+        // 0 */1 * * * *   <- every minute
+        // 0 0 1 ? * SUN * <- every Synday 1 AM
+        public static async Task Run([TimerTrigger("%Lectio2EReaderSchedule%")]TimerInfo myTimer, TraceWriter log, ExecutionContext context)
         {
             log.Info($"C# Timer trigger function executed at: {DateTime.Now}");
 
