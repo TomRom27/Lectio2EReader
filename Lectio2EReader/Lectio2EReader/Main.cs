@@ -68,7 +68,7 @@ namespace Lectio2EReader
             {
                 log.Info(ex.Message);
                 if (!errorWhenMailing)
-                    await mailSender.SendText(config["KindleEmailTo"], config["NotifyEmailTo"], "NOT Sent to Kindle", sentLinks + "\r\n" + ex.Message);
+                    await mailSender.SendText(config["KindleEmailTo"], config["NotifyEmailTo"], "NOT Sent to Kindle", sentLinks + "\r\n" + ex.Message + "\r\n" + ex.StackTrace);
             }
 
             log.Info($"C# Finished at: {DateTime.Now}");
